@@ -591,16 +591,29 @@ def get_w8a8_block_fp8_configs(
     # First look up if an optimized configuration is available in the configs
     # directory
     device_name = get_device_name().replace(" ", "_")
+    fallback_device_name = "AMD_Radeon_Graphics" if is_hip_ is True else ""
     json_file_name = f"N={N},K={K},device_name={device_name},dtype=fp8_w8a8,block_shape=[{block_n}, {block_k}].json"
+    fallback_json_file_name = f"N={N},K={K},device_name={fallback_device_name},dtype=fp8_w8a8,block_shape=[{block_n}, {block_k}].json"
 
     config_file_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "configs", json_file_name
+    )
+    fallback_config_file_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "configs", fallback_json_file_name
     )
     if os.path.exists(config_file_path):
         with open(config_file_path) as f:
             logger.info(
                 "Using configuration from %s for W8A8 Block FP8 kernel.",
                 config_file_path,
+            )
+            # If a configuration has been found, return it
+            return {int(key): val for key, val in json.load(f).items()}
+    elif os.path.exists(fallback_config_file_path):
+        with open(fallback_config_file_path) as f:
+            logger.info(
+                "Using fallback configuration from %s for W8A8 Block FP8 kernel.",
+                fallback_config_file_path,
             )
             # If a configuration has been found, return it
             return {int(key): val for key, val in json.load(f).items()}
